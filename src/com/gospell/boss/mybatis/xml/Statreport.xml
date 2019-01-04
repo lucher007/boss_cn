@@ -1,0 +1,1146 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gospell.boss.dao.IStatreportDao">
+	<sql id="idColumns">
+   		<![CDATA[
+   			id=#{id}
+   		]]>
+	</sql>
+	<sql id="whereColumns">
+		
+	</sql>
+	
+	<!-- 操作员日报 -->
+	<select id="operatorBusinessStat" parameterType="Statreport" resultType="Statreport">
+  		<![CDATA[
+			SELECT d.businesstypekey, d.businesstypename,
+				   sum(d.totalmoney) as totalprice,
+				   count(d.businesstypekey) as count 
+			  FROM userbusinessdetail d left join operator o on d.operatorid=o.id
+			 where businesstypekey <> 'transferusered' 
+		]]>
+		<if test="querystarttime != null and querystarttime != ''">
+	  		<![CDATA[
+				and date(d.addtime) >= #{querystarttime}
+	        ]]>	  
+        </if>
+        <if test="queryendtime != null and queryendtime != ''">
+	  		<![CDATA[
+				and date(d.addtime) <= #{queryendtime}
+	        ]]>	  
+        </if>
+		<if test="operatorid != null and operatorid != ''">
+	  		<![CDATA[
+				and o.id = #{operatorid}
+	        ]]>	  
+        </if>
+        <if test="netid != null and netid != ''">
+	  		<![CDATA[
+				and d.netid = #{netid}
+	        ]]>	  
+        </if>
+        <if test="queryareacode != null and queryareacode != ''">
+	  		<![CDATA[
+				and d.areacode like concat(#{queryareacodevalid},'%')
+	        ]]>	  
+        </if>
+        <!-- 
+        <if test="storeid != null and storeid != ''">
+	  		<![CDATA[
+				and d.storeid = #{storeid}
+	        ]]>	  
+        </if>
+         -->
+		<if test="source != null and source != ''">
+	  		<choose>
+	  			<when test="source == 0">
+			  		<![CDATA[
+						and d.source = #{source}
+			        ]]>	
+		        </when >  
+		        <when test="source == 1">
+		        	<![CDATA[
+						and d.source >= 1
+			        ]]>	
+		        </when >
+	  		</choose>
+        </if>
+		<![CDATA[
+			GROUP BY d.businesstypekey
+		]]>
+		<![CDATA[
+		 	order by totalprice desc
+		]]>	
+    </select>
+    
+    <!-- 操作员明细 -->
+    <sql id="whereColumns_operatorBusinessStatdetail">
+		<if test="querystarttime != null and querystarttime != ''">
+	  		<![CDATA[
+				and date(d.addtime) >= #{querystarttime}
+	        ]]>	  
+        </if>
+        <if test="queryendtime != null and queryendtime != ''">
+	  		<![CDATA[
+				and date(d.addtime) <= #{queryendtime}
+	        ]]>	  
+        </if>
+		<if test="businesstypes != null and businesstypes != ''">
+			<![CDATA[
+				and d.businesstypekey in 	
+			]]>
+			<foreach item="item" index="index" collection="businesstypes" open="(" separator="," close=")">  
+			 #{item}  
+			</foreach> 
+		</if>
+		<if test="querydate != null and querydate != ''">
+			<![CDATA[
+				and d.addtime LIKE concat('%',#{querydate},'%')	
+			]]>
+		</if>
+		<if test="operatorid != null and operatorid != ''">
+	  		<![CDATA[
+				and o.id = #{operatorid}
+	        ]]>	  
+        </if>
+        <if test="netid != null and netid != ''">
+	  		<![CDATA[
+				and d.netid = #{netid}
+	        ]]>	  
+        </if>
+        <if test="queryareacode != null and queryareacode != ''">
+	  		<![CDATA[
+				and d.areacode like concat(#{queryareacodevalid},'%')
+	        ]]>	  
+        </if>
+        <!-- 
+        <if test="storeid != null and storeid != ''">
+	  		<![CDATA[
+				and d.storeid = #{storeid}
+	        ]]>	  
+        </if>
+         -->
+        <if test="source != null and source != ''">
+	  		<choose>
+	  			<when test="source == 0">
+			  		<![CDATA[
+						and d.source = #{source}
+			        ]]>	
+		        </when >  
+		        <when test="source == 1">
+		        	<![CDATA[
+						and d.source >= 1
+			        ]]>	
+		        </when >
+	  		</choose>
+        </if>
+	</sql>
+	
+	<select id="operatorBusinessPayment" parameterType="Statreport" resultType="BigDecimal">
+  		<![CDATA[
+			SELECT sum(totalmoney) totalprice
+			  FROM userbusinessdetail d left join operator o on d.operatorid=o.id
+			 where businesstypekey <> 'transferusered' 
+		]]>
+		<include refid="whereColumns_operatorBusinessStatdetail" />
+    </select>
+    
+    <select id="operatorBusinessStatdetail" parameterType="Statreport" resultType="Statreport">
+  		<![CDATA[
+			SELECT *
+			  FROM userbusinessdetail d left join operator o on d.operatorid=o.id
+			 where businesstypekey <> 'transferusered' 
+		]]>
+		<include refid="whereColumns_operatorBusinessStatdetail" />
+		<![CDATA[
+			order by d.addtime desc limit ${pager_offset},${pager_openset}
+		]]>
+    </select>
+    
+    <select id="operatorBusinessStatCount" parameterType="Statreport" resultType="Integer">
+  		<![CDATA[
+			SELECT count(1)
+			  FROM userbusinessdetail d left join operator o on d.operatorid=o.id
+			 where businesstypekey <> 'transferusered' 
+		]]>
+		<include refid="whereColumns_operatorBusinessStatdetail" />
+    </select>
+    
+    <!-- 操作员姓名查询 -->
+    <select id="findOperatorname" parameterType="Statreport" resultType="String">
+  		<![CDATA[
+			SELECT operatorname
+			  FROM operator 
+			 where id = #{operatorid}
+		]]>
+    </select>
+    
+    <!-- 订户姓名查询 -->
+    <select id="findUsername" parameterType="Statreport" resultType="String">
+  		<![CDATA[
+			SELECT username
+			  FROM user 
+			 where id = #{userid}
+		]]>
+    </select>
+    
+    <select id="exportBusinessdetail" parameterType="Statreport" resultType="Statreport">
+  		<![CDATA[
+			SELECT *
+			  FROM userbusinessdetail d left join operator o on d.operatorid=o.id
+			 where businesstypekey <> 'transferusered' 
+		]]>
+		<if test="querystarttime != null and querystarttime != ''">
+	  		<![CDATA[
+				and date(d.addtime) >= #{querystarttime}
+	        ]]>	  
+        </if>
+        <if test="queryendtime != null and queryendtime != ''">
+	  		<![CDATA[
+				and date(d.addtime) <= #{queryendtime}
+	        ]]>	  
+        </if>
+		<if test="businesstypes != null and businesstypes != ''">
+			<![CDATA[
+				and d.businesstypekey in 	
+			]]>
+			<foreach item="item" index="index" collection="businesstypes" open="(" separator="," close=")">  
+			 #{item}  
+			</foreach> 
+		</if>
+		<if test="querydate != null and querydate != ''">
+			<![CDATA[
+				and d.addtime LIKE concat('%',#{querydate},'%')	
+			]]>
+		</if>
+		<if test="operatorid != null and operatorid != ''">
+	  		<![CDATA[
+				and o.id = #{operatorid}
+	        ]]>	  
+        </if>
+        <if test="storeid != null and storeid != ''">
+	  		<![CDATA[
+				and o.storeid = #{storeid}
+	        ]]>	  
+        </if>
+        <if test="netid != null and netid != ''">
+	  		<![CDATA[
+				and o.netid = #{netid}
+	        ]]>	  
+        </if>
+        <if test="source != null and source != ''">
+	  		<choose>
+	  			<when test="source == 0">
+			  		<![CDATA[
+						and d.source = #{source}
+			        ]]>	
+		        </when >  
+		        <when test="source == 1">
+		        	<![CDATA[
+						and d.source >= 1
+			        ]]>	
+		        </when >
+	  		</choose>
+        </if>
+        <![CDATA[
+				order by d.addtime desc
+	        ]]>	
+    </select>
+    
+    <!-- 操作员网络查询 -->
+    <select id="findOperatorNetid" parameterType="Statreport" resultType="String">
+  		<![CDATA[
+			SELECT netid
+			  FROM operator 
+			 where operatorname = #{operatorname}
+		]]>
+    </select>
+    
+    <!-- 订户收费统计 -->
+    <select id="userChargeRecord" parameterType="Statreport" resultType="Statreport">
+  		<![CDATA[
+			select *
+              from userbusinessdetail 
+			 where 1 = 1
+		]]>
+		<if test="querystarttime != null and querystarttime != ''">
+	  		<![CDATA[
+				and date(addtime) >= #{querystarttime}
+	        ]]>	  
+        </if>
+        <if test="queryendtime != null and queryendtime != ''">
+	  		<![CDATA[
+				and date(addtime) <= #{queryendtime}
+	        ]]>	  
+        </if>
+       
+        <if test="queryuserid != null and queryuserid != ''">
+	  		<![CDATA[
+				and userid = #{queryuserid}
+	        ]]>	  
+        </if>
+        <if test="querynetid != null and querynetid != ''">
+	  		<![CDATA[
+				and netid = #{querynetid}
+	        ]]>	  
+        </if>
+        <if test="queryareacode != null and queryareacode != ''">
+	  		<![CDATA[
+				and areacode like concat(#{queryareacodevalid},'%')
+	        ]]>	  
+        </if>
+        <if test="source != null and source != ''">
+	  		<choose>
+	  			<when test="source == 0">
+			  		<![CDATA[
+						and source = #{source}
+			        ]]>	
+		        </when >  
+		        <when test="source == 1">
+		        	<![CDATA[
+						and source >= 1
+			        ]]>	
+		        </when >
+	  		</choose>
+        </if>
+        <![CDATA[
+			order by addtime desc limit ${pager_offset},${pager_openset}
+		]]>
+    </select>
+    
+    <select id="userChargeRecordCount" parameterType="Statreport" resultType="Integer">
+  		<![CDATA[
+			select count(1)
+              from userbusinessdetail 
+			 where 1 = 1
+		]]>
+		<if test="querystarttime != null and querystarttime != ''">
+	  		<![CDATA[
+				and date(addtime) >= #{querystarttime}
+	        ]]>	  
+        </if>
+        <if test="queryendtime != null and queryendtime != ''">
+	  		<![CDATA[
+				and date(addtime) <= #{queryendtime}
+	        ]]>	  
+        </if>
+       <if test="queryuserid != null and queryuserid != ''">
+	  		<![CDATA[
+				and userid = #{queryuserid}
+	        ]]>	  
+        </if>
+        <if test="querynetid != null and querynetid != ''">
+	  		<![CDATA[
+				and netid = #{querynetid}
+	        ]]>	  
+        </if>
+        <if test="queryareacode != null and queryareacode != ''">
+	  		<![CDATA[
+				and areacode like concat(#{queryareacodevalid},'%')
+	        ]]>	  
+        </if>
+        <if test="source != null and source != ''">
+	  		<choose>
+	  			<when test="source == 0">
+			  		<![CDATA[
+						and source = #{source}
+			        ]]>	
+		        </when >  
+		        <when test="source == 1">
+		        	<![CDATA[
+						and source >= 1
+			        ]]>	
+		        </when >
+	  		</choose>
+        </if>
+    </select>
+    
+    <select id="exportUserChargeRecord" parameterType="Statreport" resultType="Statreport">
+  		<![CDATA[
+			select *
+              from userbusinessdetail 
+			 where 1 = 1
+		]]>
+		<if test="querystarttime != null and querystarttime != ''">
+	  		<![CDATA[
+				and date(addtime) >= #{querystarttime}
+	        ]]>	  
+        </if>
+        <if test="queryendtime != null and queryendtime != ''">
+	  		<![CDATA[
+				and date(addtime) <= #{queryendtime}
+	        ]]>	  
+        </if>
+       
+        <if test="queryuserid != null and queryuserid != ''">
+	  		<![CDATA[
+				and userid = #{queryuserid}
+	        ]]>	  
+        </if>
+        <if test="querynetid != null and querynetid != ''">
+	  		<![CDATA[
+				and netid = #{querynetid}
+	        ]]>	  
+        </if>
+        <if test="queryareacode != null and queryareacode != ''">
+	  		<![CDATA[
+				and areacode like concat(#{queryareacodevalid},'%')
+	        ]]>	  
+        </if>
+        <if test="source != null and source != ''">
+	  		<choose>
+	  			<when test="source == 0">
+			  		<![CDATA[
+						and source = #{source}
+			        ]]>	
+		        </when >  
+		        <when test="source == 1">
+		        	<![CDATA[
+						and source >= 1
+			        ]]>	
+		        </when >
+	  		</choose>
+        </if>
+        <![CDATA[
+			order by addtime desc 
+		]]>
+    </select>
+    
+    
+    <!-- 订户终端状态统计 -->
+    <sql id="whereColumns_userterminalstatestat">
+		<if test="querynetid != null and querynetid != ''">
+	  		<![CDATA[
+				and netid = #{querynetid}
+	        ]]>	  
+        </if>
+		<if test="queryareacode != null and queryareacode != ''">
+	  		<![CDATA[
+				and areacode like concat(#{queryareacodevalid},'%')
+	        ]]>	  
+        </if>
+        <if test="querystate != null and querystate != ''">
+	  		<![CDATA[
+				and state = #{querystate}
+	        ]]>	  
+        </if>
+	</sql>
+    
+    <select id="userterminalstatestatCount" parameterType="Statreport" resultType="Integer">
+  		<![CDATA[
+			SELECT count(1) FROM userstb
+			 where incardflag = '2'
+		]]>
+		<if test="querynetid != null and querynetid != ''">
+	  		<![CDATA[
+				and netid = #{querynetid}
+	        ]]>	  
+        </if>
+		<if test="queryareacode != null and queryareacode != ''">
+	  		<![CDATA[
+				and areacode like concat(#{queryareacodevalid},'%')
+	        ]]>	  
+        </if>
+        <if test="querystate != null and querystate != ''">
+	  		<![CDATA[
+				and state = #{querystate}
+	        ]]>	  
+        </if>
+    </select>
+    
+    <!-- 订户设备统计 -->
+    <select id="userterminalstatestat" parameterType="Statreport" resultType="Statreport">
+  		<![CDATA[
+			select userid,stbno terminalid,state from userstb 
+			 where incardflag = '2'
+		]]>
+		<if test="querynetid != null and querynetid != ''">
+	  		<![CDATA[
+				and netid = #{querynetid}
+	        ]]>	  
+        </if>
+		<if test="queryareacode != null and queryareacode != ''">
+	  		<![CDATA[
+				and areacode like concat(#{queryareacodevalid},'%')
+	        ]]>	  
+        </if>
+        <if test="querystate != null and querystate != ''">
+	  		<![CDATA[
+				and state = #{querystate}
+	        ]]>	  
+        </if>
+		<![CDATA[
+			order by userid desc limit ${pager_offset},${pager_openset}
+		]]>
+    </select>
+    
+    <select id="exportUserTerminalstateStat" parameterType="Statreport" resultType="Statreport">
+  		<![CDATA[
+			select userid,stbno terminalid,state from userstb 
+			 where incardflag = '2'
+		]]>
+		<if test="querynetid != null and querynetid != ''">
+	  		<![CDATA[
+				and netid = #{querynetid}
+	        ]]>	  
+        </if>
+		<if test="queryareacode != null and queryareacode != ''">
+	  		<![CDATA[
+				and areacode like concat(#{queryareacodevalid},'%')
+	        ]]>	  
+        </if>
+        <if test="querystate != null and querystate != ''">
+	  		<![CDATA[
+				and state = #{querystate}
+	        ]]>	  
+        </if>
+		<![CDATA[
+			order by userid desc
+		]]>
+    </select>
+    
+    <!-- 订户终端状态统计 -->
+    <sql id="whereColumns_userterminalstatestat_pn">
+		<if test="querynetid != null and querynetid != ''">
+	  		<![CDATA[
+				and uc.netid = #{querynetid}
+	        ]]>	  
+        </if>
+		<if test="queryareacode != null and queryareacode != ''">
+	  		<![CDATA[
+				and uc.areacode like concat(#{queryareacodevalid},'%')
+	        ]]>	  
+        </if>
+        <if test="querystate != null and querystate != ''">
+	  		<![CDATA[
+				and uc.state = #{querystate}
+	        ]]>	  
+        </if>
+	</sql>
+    
+    <select id="userterminalstatestatCount_pn" parameterType="Statreport" resultType="Integer">
+  		<![CDATA[
+			SELECT count(1) from usercard uc left join user u on uc.userid  = u.id
+			   
+		]]>
+		<trim prefix="where" prefixOverrides="and|or">
+			<include refid="whereColumns_userterminalstatestat_pn" />
+		</trim>
+    </select>
+    
+    <select id="userterminalstatestat_pn" parameterType="Statreport" resultType="Statreport">
+  		<![CDATA[
+			select uc.netid,uc.areacode,uc.userid,uc.cardid terminalid,uc.state,u.username,u.address
+			  from usercard uc left join user u on uc.userid  = u.id
+			   
+		]]>
+		<trim prefix="where" prefixOverrides="and|or">
+			<include refid="whereColumns_userterminalstatestat_pn" />
+		</trim>
+		<![CDATA[
+			order by uc.userid desc limit ${pager_offset},${pager_openset}
+		]]>
+    </select>
+    
+    <select id="exportUserTerminalstateStat_pn" parameterType="Statreport" resultType="Statreport">
+  		<![CDATA[
+			select uc.netid,uc.areacode,uc.userid,uc.cardid terminalid,uc.state,u.username,u.address
+			  from usercard uc left join user u on uc.userid  = u.id
+		]]>
+		<trim prefix="where" prefixOverrides="and|or">
+			<include refid="whereColumns_userterminalstatestat_pn" />
+		</trim>
+		<![CDATA[
+			order by uc.userid desc
+		]]>
+    </select>
+    
+    <!-- 订户产品到期统计 -->
+    <sql id="whereColumns_userproductexpiredstat">
+		<if test="querynetid != null and querynetid != ''">
+	  		<![CDATA[
+				and up.netid = #{querynetid}
+	        ]]>	  
+        </if>
+		<if test="queryareacode != null and queryareacode != ''">
+	  		<![CDATA[
+				and up.areacode like concat(#{queryareacodevalid},'%')
+	        ]]>	  
+        </if>
+        <if test="querystarttime != null and querystarttime != ''">
+	  		<![CDATA[
+				and date(up.endtime) >= #{querystarttime}
+	        ]]>	  
+        </if>
+        <if test="queryendtime != null and queryendtime != ''">
+	  		<![CDATA[
+				and date(up.endtime) <= #{queryendtime}
+	        ]]>	  
+        </if>
+	</sql>
+    
+    <select id="userproductExpiredStatCount" parameterType="Statreport" resultType="Integer">
+  		<![CDATA[
+			select count(*)
+			 from userproduct up
+			where not exists(
+			     select *
+			       from userproduct p
+			      where up.terminalid = p.terminalid
+			        and up.productid = p.productid
+			        and up.endtime < p.endtime
+			) and up.productid = '1' and up.state = '1'
+		]]>
+			<include refid="whereColumns_userproductexpiredstat" />
+    </select>
+    
+    <select id="userproductExpiredStat" parameterType="Statreport" resultType="Statreport">
+  		<![CDATA[
+			select up.terminalid,up.productid,up.endtime,up.userid
+			 from userproduct up
+			where not exists(
+			     select *
+			       from userproduct p
+			      where up.terminalid = p.terminalid
+			        and up.productid = p.productid
+			        and up.endtime < p.endtime
+			) and up.productid = '1' and up.state = '1'
+		]]>
+			<include refid="whereColumns_userproductexpiredstat" />
+		<![CDATA[
+			order by endtime desc
+			limit ${pager_offset},${pager_openset}
+		]]>
+    </select>
+    
+    <select id="exportUserProductExpiredStat" parameterType="Statreport" resultType="Statreport">
+  		<![CDATA[
+			select up.terminalid,ud.mothercardflag,up.productid,up.endtime,u.username,up.userid,u.address,u.telephone
+			from userproduct up
+			left join usercard ud on terminalid = ud.cardid
+			left join user u on u.id = up.userid
+			where not exists(
+			     select *
+			       from userproduct p
+			      where up.terminalid = p.terminalid
+			        and up.productid = p.productid
+			        and up.endtime < p.endtime
+			) and up.productid = '1' and up.state = '1'
+		]]>
+			<include refid="whereColumns_userproductexpiredstat" />
+		<![CDATA[
+			order by endtime desc
+		]]>
+    </select>
+    
+    <!-- 订户产品收视统计 -->
+    <select id="userProductAudienceStat" parameterType="Statreport" resultType="Statreport">
+  		<![CDATA[
+			select netid, productid, count(distinct terminalid) count , count(distinct userid) usercount 
+			  from userproduct
+             where (  (date(starttime) >= #{querystarttime} and #{queryendtime} >= date(starttime))
+                   or (  date(endtime) >= #{querystarttime} and #{queryendtime} >= date(endtime)  )
+                   or (date(starttime) <= #{querystarttime} and #{queryendtime} <= date(endtime)  )
+	               or (date(starttime) >= #{querystarttime} and #{queryendtime} >= date(endtime)  )
+                   ) 
+			   and state = '1'
+		]]>
+		<if test="querynetid != null and querynetid != ''">
+	  		<![CDATA[
+				and netid = #{querynetid}
+	        ]]>	  
+        </if>
+		<if test="queryareacode != null and queryareacode != ''">
+	  		<![CDATA[
+				and areacode like concat(#{queryareacodevalid},'%')
+	        ]]>	  
+        </if>
+		<![CDATA[
+			group by netid, productid
+		]]>
+    </select>
+    
+    <select id="userProductAudienceDetailStat" parameterType="Statreport" resultType="Statreport">
+  		<![CDATA[
+			select distinct terminalid,userid from userproduct
+             where (
+                     (date(starttime) >= #{querystarttime} and #{queryendtime} >= date(starttime) )
+                  or (  date(endtime) >= #{querystarttime} and #{queryendtime} >= date(endtime)   )
+		          or (date(starttime) <= #{querystarttime} and #{queryendtime} <= date(endtime)   )
+	              or (date(starttime) >= #{querystarttime} and #{queryendtime} >= date(endtime)   )
+                 ) 
+			   and state = '1' 
+		]]>
+		<if test="querynetid != null and querynetid != ''">
+	  		<![CDATA[
+				and netid = #{querynetid}
+	        ]]>	  
+        </if>
+		<if test="queryareacode != null and queryareacode != ''">
+	  		<![CDATA[
+				and areacode like concat(#{queryareacodevalid},'%')
+	        ]]>	  
+        </if>
+        <if test="queryproductid != null and queryproductid != ''">
+	  		<![CDATA[
+				and productid = #{queryproductid}
+	        ]]>	  
+        </if>
+		<![CDATA[
+			order by userid desc limit ${pager_offset},${pager_openset}
+		]]>
+    </select>
+    
+    <select id="userProductAudienceDetailStatCount" parameterType="Statreport" resultType="Integer">
+  		<![CDATA[
+			select count(distinct terminalid)
+ 			  from userproduct
+             where (
+                      (date(starttime) >= #{querystarttime} and #{queryendtime} >= date(starttime))
+                   or (date(endtime)   >= #{querystarttime} and #{queryendtime} >= date(endtime))
+ 				   or (date(starttime) <= #{querystarttime} and #{queryendtime} <= date(endtime))
+				   or (date(starttime) >= #{querystarttime} and #{queryendtime} >= date(endtime))
+			       ) 
+			   and state = '1' 
+			 
+		]]>
+		<if test="querynetid != null and querynetid != ''">
+	  		<![CDATA[
+				and netid = #{querynetid}
+	        ]]>	  
+        </if>
+		<if test="queryareacode != null and queryareacode != ''">
+	  		<![CDATA[
+				and areacode like concat(#{queryareacodevalid},'%')
+	        ]]>	  
+        </if>
+        <if test="queryproductid != null and queryproductid != ''">
+	  		<![CDATA[
+				and productid = #{queryproductid}
+	        ]]>	  
+        </if> 
+    </select>
+    
+    <select id="exportUserProductAudienceDetailStat" parameterType="Statreport" resultType="Statreport">
+  		<![CDATA[
+  		 select terminalid,userid,username,areacode,telephone,address from (
+			 select distinct terminalid,userid  from userproduct
+              where (
+              		  (date(starttime) >= #{querystarttime} and #{queryendtime} >= date(starttime))
+                   or (date(endtime)   >= #{querystarttime} and #{queryendtime} >= date(endtime))
+			       or (date(starttime) <= #{querystarttime} and #{queryendtime} <= date(endtime))
+		           or (date(starttime) >= #{querystarttime} and #{queryendtime} >= date(endtime))
+	           ) 
+		     and state = '1' 
+		]]>
+		<if test="querynetid != null and querynetid != ''">
+	  		<![CDATA[
+				and netid = #{querynetid}
+	        ]]>	  
+        </if>
+		<if test="queryareacode != null and queryareacode != ''">
+	  		<![CDATA[
+				and areacode like concat(#{queryareacodevalid},'%')
+	        ]]>	  
+        </if>
+        <if test="queryproductid != null and queryproductid != ''">
+	  		<![CDATA[
+				and productid = #{queryproductid}
+	        ]]>	  
+        </if>
+		<![CDATA[
+			) a left join user u 
+			on a.userid = u.id
+			order by userid desc 
+		]]>
+    </select>
+    
+    <!-- 订户产品欠费统计 -->
+    <sql id="whereColumns_userproductearrearsstat">
+		<if test="querynetid != null and querynetid != ''">
+	  		<![CDATA[
+				and up.netid = #{querynetid}
+	        ]]>	  
+        </if>
+		<if test="queryareacode != null and queryareacode != ''">
+	  		<![CDATA[
+				and up.areacode like concat(#{queryareacodevalid},'%')
+	        ]]>	  
+        </if>
+        <if test="queryendtime != null and queryendtime != ''">
+	  		<![CDATA[
+				and date(up.endtime) <= #{queryendtime}
+	        ]]>	  
+        </if>
+	</sql>
+    
+    <select id="userProductArrearsStatCount" parameterType="Statreport" resultType="Integer">
+  		<![CDATA[
+		 	   select count(*)
+			 from userproduct up
+			where not exists(
+			     select *
+			       from userproduct p
+			      where up.terminalid = p.terminalid
+			        and up.productid = p.productid
+			        and up.endtime < p.endtime
+			) and up.productid = '1' and up.state = '1'
+		]]>
+			<include refid="whereColumns_userproductearrearsstat" />
+		<![CDATA[
+		
+		]]>
+    </select>
+    
+    <select id="userProductArrearsStat" parameterType="Statreport" resultType="Statreport">
+  		<![CDATA[
+			   select up.terminalid,up.productid,up.endtime,up.userid
+			 from userproduct up
+			where not exists(
+			     select *
+			       from userproduct p
+			      where up.terminalid = p.terminalid
+			        and up.productid = p.productid
+			        and up.endtime < p.endtime
+			) and up.productid = '1' and up.state = '1'
+		]]>
+			<include refid="whereColumns_userproductearrearsstat" />
+		<![CDATA[
+			order by endtime desc
+			limit ${pager_offset},${pager_openset}
+		]]>
+    </select>
+    
+    <select id="exportUserProductArrearsStat" parameterType="Statreport" resultType="Statreport">
+  		<![CDATA[
+			  select up.terminalid,ud.mothercardflag,up.productid,up.endtime,u.username,up.userid,u.address,u.telephone
+			from userproduct up
+			left join usercard ud on terminalid = ud.cardid
+			left join user u on u.id = up.userid
+			where not exists(
+			     select *
+			       from userproduct p
+			      where up.terminalid = p.terminalid
+			        and up.productid = p.productid
+			        and up.endtime < p.endtime
+			) and up.productid = '1' and up.state = '1'
+		]]>
+			<include refid="whereColumns_userproductearrearsstat" />
+		<![CDATA[
+			order by endtime desc
+		]]>
+    </select>
+    
+    <!-- 产品购买收费统计 -->
+    <sql id="whereColumns_userproductchargestat">
+		<if test="querynetid != null and querynetid != ''">
+	  		<![CDATA[
+				and netid = #{querynetid}
+	        ]]>	  
+        </if>
+		<if test="queryareacode != null and queryareacode != ''">
+	  		<![CDATA[
+				and areacode like concat(#{queryareacodevalid},'%')
+	        ]]>	  
+        </if>
+        <if test="querystarttime != null and querystarttime != ''">
+	  		<![CDATA[
+				and date(addtime) >= #{querystarttime}
+	        ]]>	  
+        </if>
+        <if test="queryendtime != null and queryendtime != ''">
+	  		<![CDATA[
+				and date(addtime) <= #{queryendtime}
+	        ]]>	  
+        </if>
+	</sql>
+    
+    <select id="userProductChargeStat" parameterType="Statreport" resultType="Statreport">
+  		<![CDATA[
+			   select sum(totalmoney) totalprice,count(1) count,productid,productname,netid
+			     from userbusinessdetail
+ 				where businesstypekey ='buyproduct'
+		]]>
+			<include refid="whereColumns_userproductchargestat" />
+		<![CDATA[
+			group by netid, productid
+		]]>
+    </select>
+    
+    <!-- 发票打印报表 -->
+    <sql id="whereColumns_invoiceprintstat">
+		<if test="querynetid != null and querynetid != ''">
+	  		<![CDATA[
+				and ub.netid = #{querynetid}
+	        ]]>	  
+        </if>
+		<if test="queryareacode != null and queryareacode != ''">
+	  		<![CDATA[
+				and ub.areacode like concat(#{queryareacodevalid},'%')
+	        ]]>	  
+        </if>
+        <!-- 
+        <if test="storeid != null and storeid != ''">
+	  		<![CDATA[
+				and ub.storeid = #{storeid}
+	        ]]>	  
+        </if>
+         -->
+        <if test="operatorid != null and operatorid != ''">
+	  		<![CDATA[
+				and ub.operatorid = #{operatorid}
+	        ]]>	  
+        </if>
+        <if test="source != null and source != ''">
+	  		<choose>
+	  			<when test="source == 0">
+			  		<![CDATA[
+						and ub.source = #{source}
+			        ]]>	
+		        </when >  
+		        <when test="source == 1">
+		        	<![CDATA[
+						and ub.source >= 1
+			        ]]>	
+		        </when >
+	  		</choose>
+        </if>
+         <if test="querystarttime != null and querystarttime != ''">
+	  		<![CDATA[
+				and date(ub.printdate) >= #{querystarttime}
+	        ]]>	  
+        </if>
+        <if test="queryendtime != null and queryendtime != ''">
+	  		<![CDATA[
+				and date(ub.printdate) <= #{queryendtime}
+	        ]]>	  
+        </if>
+         <if test="invoicecode != null and invoicecode != ''">
+	  		<![CDATA[
+				and ub.invoicecode = #{invoicecode}
+	        ]]>	  
+        </if>
+	</sql>
+	
+	<select id="invoiceprintStat" parameterType="Statreport" resultType="Statreport">
+  		<![CDATA[
+			   select ub.invoicecode,ub.totalmoney,ub.addtime,ub.operatorid,ub.userid,u.username,ub.printdate
+				 from userbusiness ub left join user u on ub.userid = u.id
+				where ub.invoicecode is not null and ub.invoicecode <> ''
+		]]>
+	    <include refid="whereColumns_invoiceprintstat" />
+		<![CDATA[
+			limit ${pager_offset},${pager_openset}
+		]]>
+    </select>
+    
+    <select id="exportinvoiceprintStat" parameterType="Statreport" resultType="Statreport">
+  		<![CDATA[
+			    select ub.invoicecode,ub.totalmoney,ub.addtime,ub.operatorid,ub.userid,u.username,ub.printdate
+				 from userbusiness ub left join user u on ub.userid = u.id
+				where ub.invoicecode is not null and ub.invoicecode <> ''
+		]]>
+			<include refid="whereColumns_invoiceprintstat" />
+    </select>
+    
+    <select id="invoiceprintStatCount" parameterType="Statreport" resultType="Integer">
+  		<![CDATA[
+			   select count(1)
+				  from userbusiness ub left join user u on ub.userid = u.id
+				where ub.invoicecode is not null and ub.invoicecode <> ''
+		]]>
+			<include refid="whereColumns_invoiceprintstat" />
+    </select>
+    
+    <!-- MPS发票打印报表 -->
+    <sql id="whereColumns_invoiceprintstat_mps">
+		<if test="querynetid != null and querynetid != ''">
+	  		<![CDATA[
+				and netid = #{querynetid}
+	        ]]>	  
+        </if>
+		<if test="queryareacode != null and queryareacode != ''">
+	  		<![CDATA[
+				and areacode like concat(#{queryareacodevalid},'%')
+	        ]]>	  
+        </if>
+        <if test="storeid != null and storeid != ''">
+	  		<![CDATA[
+				and storeid = #{storeid}
+	        ]]>	  
+        </if>
+	</sql>
+    
+    <select id="invoiceprintStat_MPS" parameterType="Statreport" resultType="Statreport">
+  		<![CDATA[
+			   select invoicecode,totalmoney,addtime,operatorid,userid
+				 from userbusiness
+				where invoicecode is not null
+				  and operatorid is null
+		]]>
+			<include refid="whereColumns_invoiceprintstat_mps" />
+		<![CDATA[
+			limit ${pager_offset},${pager_openset}
+		]]>
+    </select>
+    
+    <select id="exportinvoiceprintStat_MPS" parameterType="Statreport" resultType="Statreport">
+  		<![CDATA[
+			   select invoicecode,totalmoney,addtime,operatorid,userid
+				 from userbusiness
+				where invoicecode is not null
+				  and operatorid is null
+		]]>
+			<include refid="whereColumns_invoiceprintstat_mps" />
+    </select>
+    
+    <select id="invoiceprintStatCount_MPS" parameterType="Statreport" resultType="Integer">
+  		<![CDATA[
+			   select count(1)
+				 from userbusiness
+				where invoicecode is not null
+				  and operatorid is null
+		]]>
+			<include refid="whereColumns_invoiceprintstat_mps" />
+    </select>
+    
+    <!-- 前端用户明细_智能卡统计 -->
+    <select id="userdetailStat_card" parameterType="Statreport" resultType="Integer">
+  		<![CDATA[
+			   select count(1) from card
+			    where 1 = 1 
+		]]>
+		<if test="querystate != null and querystate != ''">
+	  		<![CDATA[
+				and state = #{querystate}
+	        ]]>	  
+        </if>
+        <if test="querynetid != null and querynetid != ''">
+	  		<![CDATA[
+				and netid = #{querynetid}
+	        ]]>	  
+        </if>
+    </select>
+    
+    <!-- 前端用户明细_终端统计 -->
+    <select id="userdetailStat_usercard" parameterType="Statreport" resultType="Integer">
+  		<![CDATA[
+			   select count(1) from usercard
+			    where 1 = 1 
+		]]>
+		<if test="querystate != null and querystate != ''">
+	  		<![CDATA[
+				and state = #{querystate}
+	        ]]>	  
+        </if>
+        <if test="querycardflag != null and querycardflag != ''">
+	  		<![CDATA[
+				and cardflag = #{querycardflag}
+	        ]]>	  
+        </if>
+        <if test="querymothercardflag != null and querymothercardflag != ''">
+	  		<![CDATA[
+				and mothercardflag = #{querymothercardflag}
+	        ]]>	  
+        </if>
+        <if test="querynetid != null and querynetid != ''">
+	  		<![CDATA[
+				and netid = #{querynetid}
+	        ]]>	  
+        </if>
+        <if test="queryareacode != null and queryareacode != ''">
+	  		<![CDATA[
+				and areacode like concat(#{queryareacodevalid},'%')
+	        ]]>	  
+        </if>
+    </select>
+    
+    <!-- 前端用户明细_用户统计 -->
+    <select id="userdetailStat_user" parameterType="Statreport" resultType="Integer">
+  		<![CDATA[
+			   select count(1) from user
+			    where 1 = 1 
+		]]>
+		<if test="querystate != null and querystate != ''">
+	  		<![CDATA[
+				and state = #{querystate}
+	        ]]>	  
+        </if>
+        <if test="queryusertype != null and queryusertype != ''">
+	  		<![CDATA[
+				and usertype = #{queryusertype}
+	        ]]>	  
+        </if>
+        <if test="querynetid != null and querynetid != ''">
+	  		<![CDATA[
+				and netid = #{querynetid}
+	        ]]>	  
+        </if>
+		<if test="queryareacode != null and queryareacode != ''">
+	  		<![CDATA[
+				and areacode like concat(#{queryareacodevalid},'%')
+	        ]]>	  
+        </if>
+    </select>
+    
+    <!-- 前端用户明细_副机统计 -->
+    <select id="userdetailStat_userstb" parameterType="Statreport" resultType="Integer">
+  		<![CDATA[
+			   select count(1) from userstb
+			    where mothercardflag = #{querystate}
+		]]>
+        <if test="querynetid != null and querynetid != ''">
+	  		<![CDATA[
+				and netid = #{querynetid}
+	        ]]>	  
+        </if>
+		<if test="queryareacode != null and queryareacode != ''">
+	  		<![CDATA[
+				and areacode like concat(#{queryareacodevalid},'%')
+	        ]]>	  
+        </if>
+    </select>
+    
+    <!-- 前端用户明细_欠费用户统计 -->
+    <select id="userdetailStat_userpurchased" parameterType="Statreport" resultType="Integer">
+  		<![CDATA[
+			   select count(1) from (
+					select terminalid,productid,productname, starttime,max(endtime) endtime,userid,netid,areacode
+					from userproduct
+					where state = '1'
+						and productid = '1'
+					group by terminalid )a
+					where date(a.endtime) <= #{queryendtime}
+		]]>
+        <if test="querynetid != null and querynetid != ''">
+	  		<![CDATA[
+				and a.netid = #{querynetid}
+	        ]]>	  
+        </if>
+		<if test="queryareacode != null and queryareacode != ''">
+	  		<![CDATA[
+				and a.areacode like concat(#{queryareacodevalid},'%')
+	        ]]>	  
+        </if>
+    </select>
+    
+    <!-- 前端用户明细_用户级别统计 -->
+    <select id="userdetailStat_userlevel" parameterType="Statreport" resultType="Integer">
+  		<![CDATA[
+			   select count(1) from user 
+ 				where userlevelid = #{userlevel}
+		]]>
+        <if test="querynetid != null and querynetid != ''">
+	  		<![CDATA[
+				and netid = #{querynetid}
+	        ]]>	  
+        </if>
+		<if test="queryareacode != null and queryareacode != ''">
+	  		<![CDATA[
+				and areacode like concat(#{queryareacodevalid},'%')
+	        ]]>	  
+        </if>
+    </select>
+    
+</mapper>
